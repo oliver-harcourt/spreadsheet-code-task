@@ -1,5 +1,5 @@
 let cellState = []
-const gridSize = 5
+const gridSize = 100
 const tableBody = document.getElementById("sheet")
 
 // creates initial grid matrix based on gridSize
