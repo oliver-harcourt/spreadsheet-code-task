@@ -1,0 +1,42 @@
+* {
+  font-family: 'Raleway', sans-serif;
+}
+
+table {
+  border-collapse: collapse;
+  border: 1px solid gainsboro;
+}
+
+td {
+  border: 1px solid gainsboro;
+  width: 75px;
+  height: 20px;
+}
+
+input {
+  border-top-style: hidden;
+  border-right-style: hidden;
+  border-left-style: hidden;
+  border-bottom-style: hidden;
+}
+
+.first-row {
+  background-color: rgb(245, 247, 250);
+  text-align: center;
+}
+
+.first-col {
+  background-color: rgb(245, 247, 250);
+}
+
+#refresh-button {
+  border: 1px solid black;
+  background-image: 
+    linear-gradient(
+      to top left,
+      rgb(79, 143, 79),
+      white
+    );
+  width: 100%;
+  height: 100%
+}
