@@ -21,37 +21,90 @@ const generateGrid = (n) => {
   return grid
 }
 
-const isOperator = () => {
+// checks forumala string and returns operators in an array
+const isOperator = (inputStr) => {
+  let operatorArr = inputStr.filter(str => {
+    if (str === "+") return true
+    if (str === "-") return true
+    if (str === "*") return true
+    if (str === "/") return true
+  })
+  return operatorArr
+}
 
+// calls creates string from coords and operators to pass to calculate
+const cellValuesToFormulaStr = (coordsArr, operatorsArr) => {
+  let formulaStr = ""
+  let cellValuesArr = coordsArr.map(coord => {
+    return cellState[coord.row][coord.col].value
+  })
+  operatorsArr.forEach((operator, i) => {
+    formulaStr += cellValuesArr[i] + operator
+  })
+  formulaStr = formulaStr.concat(cellValuesArr.pop())
+  return formulaStr
+}
+
+// function to parse coordinates from input value
+const coordFinder = (inputCharArray, operators) => {
+  let charArr = []
+  let i
+  let k
+
+  for (i = 0, k = -1; i < inputCharArray.length; i++) {
+    if((i + 1) >= inputCharArray.length){
+      charArr[k].push(inputCharArray[i])
+      charArr[k].pop()
+    } else if (operators.indexOf(inputCharArray[i + 1]) !== 0) {
+      k++;
+      charArr[k] = [];
+    } 
+    charArr[k].push(inputCharArray[i])
+  }
+  let coordArr = charArr.filter(chars => {
+    return chars.length == 2
+  })
+
+  return coordArr
 }
 
 // formatter to convert alphabetic label to column index
-const lettersToCellCoords = (inputValue) => {
+const inputValueToFormulaConverter = (inputValue) => {
   let charArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-  // needs refactoring...
-  let gridCoordArr = inputValue.substring(1).split('+').map((coords, i) => {
+
+  let formula = inputValue.substring(1)
+  let inputStrArr = formula.split('')
+  let operatorArr = isOperator(inputStrArr)
+
+  // currently working on getting coords into an array so I can operate on more than one cell
+  let coordArr = coordFinder(inputStrArr, operatorArr)
+
+  let gridCoordArr = formula.split(operatorArr[0]).map((coords, i) => {
     let gridCoords = coords.split('').map((coord, i) => {
       if (isNaN(coord)) {
+        // need to change this so it can handle mutliple letter and number coords e.g. AA10
         coord = charArray.indexOf(coord) + 1
       }
       return coord
     })
-    return gridCoords.join('')
+    return {
+      row: gridCoords[1],
+      col: gridCoords[0],
+    }
   })
-  return gridCoordArr
+  return [...gridCoordArr, operatorArr]
 }
 
-const calculate = (letterCoords) => {
-  let cellsForEquation = lettersToCellCoords(letterCoords)
-  let firstCellValue = cellState[cellsForEquation[0][1]][cellsForEquation[1][1]].value
-  let secondCellValue = cellState[cellsForEquation[0][0]][cellsForEquation[1][0]].value
-  return Number(firstCellValue) + Number(secondCellValue)
+const calculate = (formulaCoords) => {
+  let coordsArr = inputValueToFormulaConverter(formulaCoords)
+  let operatorArr = coordsArr.pop()
+  let formula = cellValuesToFormulaStr(coordsArr, operatorArr)
+
+  return eval(formula)
 }
 
 // handles basic formula input to a cell
 const basicFormula = (targetCell) => {
-  // Definitely needs to be refactored....
-  // render cell.value based on formula data if existing
   cellState = cellState.map(row => {
     return row.map(cell => {
       if (cell.colCoord == targetCell.data.colCoord && cell.rowCoord == targetCell.data.rowCoord) {
@@ -80,7 +133,7 @@ const setCellStateFromInput = (targetCell) => {
 
 // handles input information to update cell data
 const handleInput = (e) => {
-  if (e.target.value[0] == "=" || e.target.data.formula[0] == "=") {
+  if (e.target.value[0] == "=") {
     basicFormula(e.target)
   } else {
     setCellStateFromInput(e.target)
@@ -122,7 +175,12 @@ const createCellNode = (cell) => {
     newCell.classList.add('first-row')
     // appends an input to each cell and gives it information references matching cellState data cell
   } else if (cell.formula !== "") {
+    // if(!calculate(cell.formula)){
+    //   input.value = "Sorry, I don't understand that command!"
+    // } else {
     input.value = calculate(cell.formula)
+    // }
+
     newCell.appendChild(input)
   } else {
     input.value = cell.value
