@@ -10,6 +10,7 @@ const generateGrid = (n) => {
     for (let j = 0; j <= n; j++) {
       let cell = {
         value: "",
+        formula: "",
         rowCoord: i,
         colCoord: j
       }
@@ -20,13 +21,17 @@ const generateGrid = (n) => {
   return grid
 }
 
+const isOperator = () => {
+
+}
+
 // formatter to convert alphabetic label to column index
 const lettersToCellCoords = (inputValue) => {
   let charArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
   // needs refactoring...
-  let gridCoordArr = inputValue.substring(1).split('+').map((coords, i)=> {
+  let gridCoordArr = inputValue.substring(1).split('+').map((coords, i) => {
     let gridCoords = coords.split('').map((coord, i) => {
-      if(isNaN(coord)){
+      if (isNaN(coord)) {
         coord = charArray.indexOf(coord) + 1
       }
       return coord
@@ -36,40 +41,48 @@ const lettersToCellCoords = (inputValue) => {
   return gridCoordArr
 }
 
+const calculate = (letterCoords) => {
+  let cellsForEquation = lettersToCellCoords(letterCoords)
+  let firstCellValue = cellState[cellsForEquation[0][1]][cellsForEquation[1][1]].value
+  let secondCellValue = cellState[cellsForEquation[0][0]][cellsForEquation[1][0]].value
+  return Number(firstCellValue) + Number(secondCellValue)
+}
+
 // handles basic formula input to a cell
 const basicFormula = (targetCell) => {
-  // this is where I'm currently up to at ~4.5 hours, feels so close to getting basic functionality! Definitely needs to be refactored....
-  let cellsForEquation = lettersToCellCoords(targetCell.value)
-  return cellState.map(row => {
+  // Definitely needs to be refactored....
+  // render cell.value based on formula data if existing
+  cellState = cellState.map(row => {
     return row.map(cell => {
-      if(cell.colCoord == targetCell.data.colCoord && cell.rowCoord == targetCell.data.rowCoord){
-        let firstCellValue = cellState[cellsForEquation[0][0]][cellsForEquation[0][1]].value
-        let secondCellValue = cellState[cellsForEquation[1][0]][cellsForEquation[1][1]].value
-      
-        cell.value = (firstCellValue + secondCellValue)
+      if (cell.colCoord == targetCell.data.colCoord && cell.rowCoord == targetCell.data.rowCoord) {
+        let formula = cell.formula == "" ? targetCell.value : cell.formula
+        cell.formula = formula
+        cell.value = calculate(formula)
       }
       return cell
     })
   })
+  refresh()
 }
 
 // updates the cellState data following user input
 const setCellStateFromInput = (targetCell) => {
-  return cellState.map(row => {
+  cellState = cellState.map(row => {
     return row.map(cell => {
-      if(cell.colCoord == targetCell.data.colCoord && cell.rowCoord == targetCell.data.rowCoord){
+      if (cell.colCoord == targetCell.data.colCoord && cell.rowCoord == targetCell.data.rowCoord) {
         cell.value = targetCell.value
-      } 
+      }
       return cell
     })
   })
+  refresh()
 }
 
 // handles input information to update cell data
 const handleInput = (e) => {
-  if(e.target.value[0] == "="){
+  if (e.target.value[0] == "=" || e.target.data.formula[0] == "=") {
     basicFormula(e.target)
-  }else {
+  } else {
     setCellStateFromInput(e.target)
   }
 }
@@ -83,32 +96,35 @@ const refresh = (e) => {
 // formatter to convert column index to incrementing alphabetic label
 const indexToLetters = (n) => {
   let charArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-  let firstLetter = (charArray[Math.ceil(n/26) - 2] || '') 
-  let secondLetter = charArray[(n -1) % 26]
+  let firstLetter = (charArray[Math.ceil(n / 26) - 2] || '')
+  let secondLetter = charArray[(n - 1) % 26]
   return firstLetter + secondLetter
 }
 
 const createCellNode = (cell) => {
   const newCell = document.createElement('td')
+  const input = document.createElement('input')
+  input.data = cell
+  input.onchange = handleInput
   // checks to see if first cell and creates button
-  if(cell.colCoord == 0 && cell.rowCoord == 0){
+  if (cell.colCoord == 0 && cell.rowCoord == 0) {
     const refreshButton = document.createElement('button')
     refreshButton.onclick = refresh
     refreshButton.setAttribute('id', 'refresh-button')
     newCell.appendChild(refreshButton)
     // checks to see if first column to add index formatting
-  } else if(cell.colCoord == 0){
+  } else if (cell.colCoord == 0) {
     newCell.innerHTML = cell.rowCoord
     newCell.classList.add('first-col')
     // checks to see if first row to add index formatting
-  } else if(cell.rowCoord == 0 && cell.colCoord !== 0){
-     newCell.innerHTML = indexToLetters(cell.colCoord)
-     newCell.classList.add('first-row')
-     // appends an input to each cell and gives it information references matching cellState data cell
+  } else if (cell.rowCoord == 0 && cell.colCoord !== 0) {
+    newCell.innerHTML = indexToLetters(cell.colCoord)
+    newCell.classList.add('first-row')
+    // appends an input to each cell and gives it information references matching cellState data cell
+  } else if (cell.formula !== "") {
+    input.value = calculate(cell.formula)
+    newCell.appendChild(input)
   } else {
-    const input = document.createElement('input')
-    input.data = cell
-    input.onchange = handleInput
     input.value = cell.value
     newCell.appendChild(input)
   }
