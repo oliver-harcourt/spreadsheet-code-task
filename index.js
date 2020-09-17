@@ -45,7 +45,7 @@ const cellValuesToFormulaStr = (coordsArr, operatorsArr) => {
   return formulaStr
 }
 
-// function to parse coordinates from input value
+// function to get coordinates from input value and return in 2d array
 const coordFinder = (inputCharArray, operators) => {
   let charArr = []
   let i
@@ -64,7 +64,6 @@ const coordFinder = (inputCharArray, operators) => {
   let coordArr = charArr.filter(chars => {
     return chars.length == 2
   })
-
   return coordArr
 }
 
@@ -79,6 +78,7 @@ const inputValueToFormulaConverter = (inputValue) => {
   // currently working on getting coords into an array so I can operate on more than one cell
   let coordArr = coordFinder(inputStrArr, operatorArr)
 
+  // needs refactoring, can only operate using one operator
   let gridCoordArr = formula.split(operatorArr[0]).map((coords, i) => {
     let gridCoords = coords.split('').map((coord, i) => {
       if (isNaN(coord)) {
@@ -101,6 +101,12 @@ const calculate = (formulaCoords) => {
   let formula = cellValuesToFormulaStr(coordsArr, operatorArr)
 
   return eval(formula)
+}
+
+// refreshes grid with cellState data
+const refresh = (e) => {
+  document.getElementById("sheet").innerHTML = ''
+  render(cellState)
 }
 
 // handles basic formula input to a cell
@@ -140,12 +146,6 @@ const handleInput = (e) => {
   }
 }
 
-// refreshes grid with cellState data
-const refresh = (e) => {
-  document.getElementById("sheet").innerHTML = ''
-  render(cellState)
-}
-
 // formatter to convert column index to incrementing alphabetic label
 const indexToLetters = (n) => {
   let charArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -173,15 +173,11 @@ const createCellNode = (cell) => {
   } else if (cell.rowCoord == 0 && cell.colCoord !== 0) {
     newCell.innerHTML = indexToLetters(cell.colCoord)
     newCell.classList.add('first-row')
-    // appends an input to each cell and gives it information references matching cellState data cell
+    // checks to see if cell has formula 
   } else if (cell.formula !== "") {
-    // if(!calculate(cell.formula)){
-    //   input.value = "Sorry, I don't understand that command!"
-    // } else {
     input.value = calculate(cell.formula)
-    // }
-
     newCell.appendChild(input)
+     // appends an input to each cell and gives it information references matching cellState data cell
   } else {
     input.value = cell.value
     newCell.appendChild(input)
